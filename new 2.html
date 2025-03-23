@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="he">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>דף ברכות</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka&family=M+PLUS+Rounded+1c&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Fredoka', sans-serif;
+      background-color: #FAF4E4;
+      margin: 0;
+      padding: 0;
+      direction: rtl;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .board {
+      flex: 1;
+      padding: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      overflow-y: auto;
+      justify-content: center;
+    }
+
+    .sticky-note {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      font-family: 'M PLUS Rounded 1c', sans-serif;
+      font-size: 16px;
+      word-wrap: break-word;
+      white-space: pre-wrap;
+      transform: rotate(calc(-3deg + 6deg * var(--rand-rotate)));
+      min-height: 60px;
+      max-width: 200px;
+      min-width: 120px;
+      max-height: 100%;
+    }
+
+    .sticky-note .name {
+      font-size: 14px;
+      font-weight: bold;
+      margin-top: 10px;
+      align-self: flex-end;
+    }
+
+    .form-toggle {
+      text-align: center;
+      padding: 10px;
+      background-color: #faf4e4;
+    }
+
+    .form-toggle button {
+      background-color: #257180;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 30px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.3s ease;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-toggle button:hover {
+      background-color: #1b5a63;
+      transform: scale(1.05);
+    }
+
+    .form {
+      padding: 15px;
+      background-color: #FAF4E4;
+      position: sticky;
+      bottom: 0;
+      z-index: 100;
+      box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .form label {
+      display: block;
+      margin: 6px 0 2px;
+    }
+
+    .form input[type="text"],
+    .form textarea,
+    .form select {
+      width: 100%;
+      padding: 8px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-family: 'Fredoka', sans-serif;
+    }
+
+    .form button {
+      margin-top: 10px;
+      padding: 10px;
+      background-color: #257180;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .form button:hover {
+      background-color: #1b5a63;
+    }
+
+    .colors {
+      display: flex;
+      gap: 10px;
+      margin-top: 5px;
+    }
+
+    .color {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+    }
+
+    .color.selected {
+      border: 2px solid black;
+    }
+
+    .color[data-color="#E78F81"] { background-color: #E78F81; }
+    .color[data-color="#FFCFB3"] { background-color: #FFCFB3; }
+    .color[data-color="#FFF5CD"] { background-color: #FFF5CD; }
+    .color[data-color="#B7E0FF"] { background-color: #B7E0FF; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="board" id="board"></div>
+
+    <div class="form-toggle">
+      <button id="toggleForm">⬇️ הצג/הסתר טופס</button>
+    </div>
+
+    <div class="form" id="formSection">
+      <label for="name">מה השם שלכם?</label>
+      <input type="text" id="name" placeholder="הכנס את שמך" maxlength="50" />
+
+      <label for="message">שתפו אותנו במילים חמות:</label>
+      <textarea id="message" rows="3" placeholder="כתוב את הברכה שלך כאן..." maxlength="150"></textarea>
+
+      <label for="privacy">איך תרצו לשלוח את הברכה?</label>
+      <select id="privacy">
+        <option value="public">לשתף עם כולם</option>
+        <option value="private">לשלוח רק לבעלי האירוע</option>
+      </select>
+
+      <label>בחר צבע פתק:</label>
+      <div class="colors">
+        <div class="color selected" data-color="#FFF5CD"></div>
+        <div class="color" data-color="#E78F81"></div>
+        <div class="color" data-color="#FFCFB3"></div>
+        <div class="color" data-color="#B7E0FF"></div>
+      </div>
+
+      <button id="send">שלח</button>
+    </div>
+  </div>
+
+  <script>
+    const board = document.getElementById('board');
+    const colors = document.querySelectorAll('.color');
+    const toggleButton = document.getElementById('toggleForm');
+    const formSection = document.getElementById('formSection');
+    let selectedColor = "#FFF5CD";
+
+    const webAppUrl = "https://script.google.com/macros/s/AKfycby_UwKp4_wUVPQTue7QpdHd3D3vdIWAHZCIVkYXOPT33L4_OL9lo6z0BLCg2lvYT9A8MQ/exec"; // החליפי אם השתנה לך
+
+    colors.forEach(color => {
+      color.addEventListener('click', () => {
+        colors.forEach(c => c.classList.remove('selected'));
+        color.classList.add('selected');
+        selectedColor = color.dataset.color;
+      });
+    });
+
+    toggleButton.addEventListener('click', () => {
+      formSection.style.display = formSection.style.display === 'none' ? 'block' : 'none';
+    });
+
+    function getRandomRotation() {
+      return Math.random().toFixed(2);
+    }
+
+    function createStickyNote(name, message, color) {
+      const note = document.createElement("div");
+      note.className = "sticky-note";
+      note.style.setProperty('--rand-rotate', getRandomRotation());
+      note.style.backgroundColor = color;
+
+      const messageDiv = document.createElement("div");
+      messageDiv.textContent = message;
+
+      const nameDiv = document.createElement("div");
+      nameDiv.className = "name";
+      nameDiv.textContent = `- ${name}`;
+
+      note.appendChild(messageDiv);
+      note.appendChild(nameDiv);
+      board.appendChild(note);
+    }
+
+    async function loadData() {
+      try {
+        const res = await fetch(webAppUrl);
+        const data = await res.json();
+
+        board.innerHTML = "";
+        data.forEach(row => {
+          if (row.privacy === "public") {
+            createStickyNote(row.name, row.message, row.color || "#FFF5CD");
+          }
+        });
+      } catch (err) {
+        console.error("שגיאה בטעינת הברכות:", err);
+      }
+    }
+
+    document.getElementById('send').addEventListener('click', async () => {
+      const name = document.getElementById('name').value.trim();
+      const message = document.getElementById('message').value.trim();
+      const privacy = document.getElementById('privacy').value;
+      const color = selectedColor;
+
+      if (!name || !message) {
+        alert("אנא מלאו שם וברכה.");
+        return;
+      }
+
+      const url = `${webAppUrl}?name=${encodeURIComponent(name)}&message=${encodeURIComponent(message)}&privacy=${encodeURIComponent(privacy)}&color=${encodeURIComponent(color)}`;
+
+      try {
+        const response = await fetch(url);
+        const result = await response.json();
+
+        if (result.result === "success") {
+          loadData();
+        } else {
+          alert("שגיאה בשליחת הברכה");
+        }
+      } catch (error) {
+        alert("שגיאה בחיבור לגיליון");
+      }
+
+      document.getElementById('name').value = "";
+      document.getElementById('message').value = "";
+      document.getElementById('privacy').value = "public";
+      colors.forEach(c => c.classList.remove('selected'));
+      colors[0].classList.add('selected');
+      selectedColor = "#FFF5CD";
+    });
+
+    window.addEventListener("load", loadData);
+  </script>
+</body>
+</html>
